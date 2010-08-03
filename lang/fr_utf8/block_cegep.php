@@ -46,6 +46,7 @@ $string['coursegroupnumber'] = 'Numéro du groupe-cours';
 $string['program'] = 'Programme';
 $string['nocoursegroupsenrolled'] = 'Aucun groupe-cours n\'est inscrit dans ce cours';
 $string['accessuserprofile'] = 'Accéder au profil de l\'utilisateur';
+$string['nostudentsenrolled'] = 'Il n\'y a aucun étudiant inscrit à ce cours.';
 
 // Enrol form
 $string['coursegroupenrolled'] = '<strong>Inscription complétée avec succès.</strong><br /><br />Voici les étudiants ajoutés au cours :<br /><br />$a[0]<br /><br />Bonne session!<br /><br />';
@@ -53,7 +54,7 @@ $string['enrolanother'] = 'Inscrire un autre groupe-cours';
 $string['make_visible'] = 'Rendre ce cours disponible aux étudiants';
 $string['enrolhelp'] = "Choisissez les groupes-cours à inscrire dans ce cours. Notez que si vous désirez avoir <b>un cours distinct pour chaque groupe-cours</b>, vous devez n'inscrire qu'un seul groupe-cours ici et créer un cours pour vos autres groupes-cours.";
 $string['enrolcoursegroup'] = 'Inscrire un groupe-cours';
-$string['nocoursegroupavailable'] = "Aucun groupe-cours n'est disponible pour inscription à ce cours.";
+$string['nocoursegroupsavailable'] = "Aucun groupe-cours n'est disponible pour inscription à ce cours.";
 $string['nocoursegroupselected'] = 'Veuillez choisir un groupe à inscrire.';
 
 // Unenrol form
