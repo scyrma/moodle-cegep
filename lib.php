@@ -150,44 +150,49 @@ function cegep_local_get_teacher_enrolments($idnumber, $term) {
 
     $enrolments = array();
 
-    // Prepare external SIS database connection
-    if ($sisdb = sisdb_connect()) {
-        $sisdb->Execute("SET NAMES 'utf8'");
+    if (function_exists('cegep_' . $CFG->block_cegep_name . '_get_teacher_enrolments')) {
+        return call_user_func('cegep_' . $CFG->block_cegep_name . '_get_teacher_enrolments', $idnumber, $term);
+    } else {
+
+        // Prepare external SIS database connection
+        if ($sisdb = sisdb_connect()) {
+            $sisdb->Execute("SET NAMES 'utf8'");
+        }
+        else {
+            error_log('[SIS_DB] Could not make a connection');
+            print_error('dbconnectionfailed','error');
+        }
+
+        $select = "
+                SELECT DISTINCT
+                    cg.coursecode AS coursecode,
+                    cg.group AS coursegroup, 
+                    c.title AS coursetitle, 
+                    cg.term AS term 
+                FROM `$CFG->sisdb_name`.teacher_enrolment te 
+                LEFT JOIN `$CFG->sisdb_name`.coursegroup cg ON cg.id = te.coursegroup_id 
+                LEFT JOIN `$CFG->sisdb_name`.course c ON c.coursecode = cg.coursecode 
+                WHERE 
+                    te.idnumber = '$idnumber' AND 
+                    cg.term >= $term 
+                ORDER BY term, coursecode;";
+
+        $sisdb_rs = $sisdb->Execute($select);
+
+        while ($sisdb_rs && !$sisdb_rs->EOF) {
+            $enrolment = array();
+            $enrolment['coursecode'] = $sisdb_rs->fields['coursecode'];
+            $enrolment['coursegroup'] = $sisdb_rs->fields['coursegroup'];
+            $enrolment['coursetitle'] = $sisdb_rs->fields['coursetitle'];
+            $enrolment['term'] = $sisdb_rs->fields['term'];
+            array_push($enrolments, $enrolment);
+           $sisdb_rs->moveNext();
+        }
+
+        $sisdb->Close();
+
+        return $enrolments;
     }
-    else {
-        error_log('[SIS_DB] Could not make a connection');
-        print_error('dbconnectionfailed','error');
-    }
-
-    $select = "
-            SELECT DISTINCT
-                cg.coursecode AS coursecode,
-                cg.group AS coursegroup, 
-                c.title AS coursetitle, 
-                cg.term AS term 
-            FROM `$CFG->sisdb_name`.teacher_enrolment te 
-            LEFT JOIN `$CFG->sisdb_name`.coursegroup cg ON cg.id = te.coursegroup_id 
-            LEFT JOIN `$CFG->sisdb_name`.course c ON c.coursecode = cg.coursecode 
-            WHERE 
-                te.idnumber = '$idnumber' AND 
-                cg.term >= $term 
-            ORDER BY term, coursecode;";
-
-    $sisdb_rs = $sisdb->Execute($select);
-
-    while ($sisdb_rs && !$sisdb_rs->EOF) {
-        $enrolment = array();
-        $enrolment['coursecode'] = $sisdb_rs->fields['coursecode'];
-        $enrolment['coursegroup'] = $sisdb_rs->fields['coursegroup'];
-        $enrolment['coursetitle'] = $sisdb_rs->fields['coursetitle'];
-        $enrolment['term'] = $sisdb_rs->fields['term'];
-        array_push($enrolments, $enrolment);
-        $sisdb_rs->moveNext();
-    }
-
-    $sisdb->Close();
-
-    return $enrolments;
 }
 
 /**
@@ -236,7 +241,7 @@ function cegep_local_create_course($coursecode, $term = '', $meta = false) {
         
         // Course fullname and shortname
         $select_course = "SELECT * FROM `$CFG->sisdb_name`.`course` WHERE `coursecode` = '$coursecode' LIMIT 1";
-        $coursetitle = cegep_local_sisdbsource_decode('coursetitle',$sisdb->execute($select_course)->fields['title']);
+        $coursetitle = $sisdb->execute($select_course)->fields['title'];
         if (!empty($coursetitle)) {
             if (!empty($term)) {
                 $course->fullname = $coursetitle . ' (' . $coursecode . ' - ' . cegep_local_term_to_string($term) . ')';
