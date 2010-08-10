@@ -56,6 +56,55 @@ return <<< EOD
 EOD;
 }
 
+function cegep_ahuntsic_get_teacher_enrolments($idnumber, $term) {
+    global $CFG;
+
+    $enrolments = array();
+
+    // Truncate first three chars ("[a-z]{2}0" : from 'aa0' to 'zz0') from
+    // to follow the format in the SIS
+    $idnumber = substr($idnumber, 3);
+
+    // Prepare external SIS database connection
+    if ($sisdb = sisdb_connect()) {
+        $sisdb->Execute("SET NAMES 'utf8'");
+    }
+    else {
+        error_log('[SIS_DB] Could not make a connection');
+        print_error('dbconnectionfailed','error');
+    }
+
+    $select = "
+            SELECT DISTINCT
+                cg.coursecode AS coursecode,
+                cg.group AS coursegroup, 
+                c.title AS coursetitle, 
+                cg.term AS term 
+            FROM `$CFG->sisdb_name`.teacher_enrolment te 
+            LEFT JOIN `$CFG->sisdb_name`.coursegroup cg ON cg.id = te.coursegroup_id 
+            LEFT JOIN `$CFG->sisdb_name`.course c ON c.coursecode = cg.coursecode 
+            WHERE 
+                te.idnumber = '$idnumber' AND 
+                cg.term >= $term 
+            ORDER BY term, coursecode;";
+
+    $sisdb_rs = $sisdb->Execute($select);
+
+    while ($sisdb_rs && !$sisdb_rs->EOF) {
+        $enrolment = array();
+        $enrolment['coursecode'] = $sisdb_rs->fields['coursecode'];
+        $enrolment['coursegroup'] = $sisdb_rs->fields['coursegroup'];
+        $enrolment['coursetitle'] = $sisdb_rs->fields['coursetitle'];
+        $enrolment['term'] = $sisdb_rs->fields['term'];
+        array_push($enrolments, $enrolment);
+        $sisdb_rs->moveNext();
+    }
+
+    $sisdb->Close();
+
+    return $enrolments;
+}
+
 function cegep_ahuntsic_sisdbsource_decode($field, $data) {
     switch ($field) {
 
